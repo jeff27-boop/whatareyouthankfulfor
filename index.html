@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What are you thankful for?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--ink:#633c28;--rust:#a94425;--cream:#fff8ed;--line:#ead6b9}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#fff9ed 0%,#f8e6cb 62%,#efd2ad 100%);color:var(--ink);font-family:"Comic Neue","Comic Sans MS",cursive}
+header{text-align:center;padding:22px 70px 12px;background:linear-gradient(180deg,#fff8e9dd,#f3dfc4aa);border-bottom:3px solid #d9ad78;position:relative}
+header:before,header:after{content:"🍁  ✦  🍂";position:absolute;top:22px;color:#a64b2b;font-size:clamp(16px,2vw,25px)}
+header:before{left:18px}header:after{right:18px}
+h1{font-family:"Comic Neue","Comic Sans MS",cursive;font-size:clamp(32px,4.5vw,54px);font-weight:700;margin:4px;color:#963d24;text-shadow:1px 2px 0 #f5d9a9,2px 4px 10px #8a4b2522;letter-spacing:.3px}
+.answer-pattern{margin:5px 0 2px;color:#704326;font-family:"Comic Neue","Comic Sans MS",cursive;font-size:clamp(19px,2.4vw,29px);font-weight:700;letter-spacing:.2px;text-shadow:0 1px #fff8e9}
+#teacher{display:block}
+.board{position:relative;width:calc(100% - 24px);max-width:1500px;height:min(78vh,860px);min-height:510px;margin:10px auto 0;overflow:hidden;border:4px solid #d9ad78;border-radius:26px;background:linear-gradient(145deg,#fff8e9,#f6e1c3);box-shadow:inset 0 0 35px #b8793b20,0 8px 24px #70431b22}
+.tree-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;pointer-events:none}
+#leaves{position:absolute;inset:0}
+.leaf{position:absolute;width:clamp(100px,10vw,138px);height:clamp(102px,10vw,140px);display:block;transform:rotate(var(--tilt));filter:drop-shadow(2px 5px 5px #54301d55);animation:pop .55s ease both;cursor:pointer;z-index:2;transition:transform .18s ease,filter .18s ease}
+.leaf:hover,.leaf:focus{z-index:15;transform:rotate(0deg) scale(1.13);filter:drop-shadow(3px 7px 8px #54301d66);outline:none}
+.leaf img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.leaf .leaf-words{position:absolute;left:12%;right:12%;top:27%;max-height:47%;overflow:hidden;overflow-wrap:anywhere;text-align:center;color:#542b19;font-family:"Comic Neue","Comic Sans MS",cursive;font-weight:700;font-size:clamp(12px,1.15vw,16px);line-height:1.08;text-shadow:0 1px 0 #fff8e9;background:#fff4d9d9;border:1px solid #fff9e8;border-radius:10px;padding:4px 3px;box-shadow:0 1px 4px #60371930}
+.leaf .leaf-name{position:absolute;left:12%;right:12%;bottom:7%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;color:#3f2518;font-family:"Comic Neue","Comic Sans MS",cursive;font-weight:700;font-size:clamp(9px,.85vw,11px);line-height:1;text-shadow:0 1px 0 #fff8e9}
+@keyframes pop{from{opacity:0;scale:.2}to{opacity:1;scale:1}}
+.counter{text-align:center;padding:12px;font-family:"Comic Neue","Comic Sans MS",cursive;font-weight:700;font-size:20px;color:#963d24;text-shadow:0 1px #fff4df}
+#connection{font:12px Arial,sans-serif;text-align:center;color:#8b6d58;padding:0 12px 12px}
+.clear-toggle{position:fixed;top:14px;left:16px;z-index:12;width:48px;height:48px;padding:0;border:2px solid #d9ad78;border-radius:14px;background:#fff;color:#a33f29;font-size:23px;box-shadow:0 3px 12px #0002}
+.qr-toggle{position:fixed;top:14px;right:16px;z-index:12;width:48px;height:48px;padding:0;border:2px solid var(--line);border-radius:14px;background:#fff;color:#8c4728;font-size:25px;box-shadow:0 3px 12px #0002}
+.qr-panel{display:none;position:fixed;top:70px;right:16px;width:176px;padding:12px;background:white;border:2px solid var(--line);border-radius:18px;text-align:center;box-shadow:0 4px 18px #0002;z-index:11;font:13px Arial,sans-serif}
+.qr-panel.open{display:block}
+#qrcode{display:flex;justify-content:center;margin:8px auto}
+.qr-panel p{margin:6px 0;color:#76543f}
+#student{display:none;max-width:540px;margin:30px auto;padding:26px;background:linear-gradient(145deg,#fffdf8,#fff0d9);border:2px solid #e3bd8c;border-radius:26px;box-shadow:0 10px 32px #70431b28;font-family:"Comic Neue","Comic Sans MS",cursive}
+#student h2{text-align:center;color:#963d24;font-family:"Comic Neue","Comic Sans MS",cursive;font-size:34px;font-weight:700;margin:0 0 20px}
+.student-field-label{display:block;margin:12px 0 6px;font:bold 17px "Comic Neue","Comic Sans MS",cursive;color:#633c28}
+.student-name-input{width:100%;padding:14px 16px;border:2px solid #d8ad7c;border-radius:14px;font:20px "Comic Neue","Comic Sans MS",cursive;outline:none;background:#fffdf8;color:#50301f;margin-bottom:6px}
+textarea{width:100%;min-height:150px;padding:16px;border:2px solid #d8ad7c;border-radius:16px;font:22px "Comic Neue","Comic Sans MS",cursive;resize:vertical;outline:none;background:#fffdf8;color:#50301f}
+textarea:focus,input:focus{border-color:#d47739}
+button{border:0;border-radius:14px;padding:14px 16px;font:bold 17px "Comic Neue","Comic Sans MS",cursive;cursor:pointer}
+.translate-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,#f7d9a9,#e9b979);color:#63351f;box-shadow:0 3px 0 #c58a52}
+.add-btn{width:100%;margin-top:12px;padding:17px;background:linear-gradient(135deg,#bd5932,#963d24);color:white;box-shadow:0 3px 0 #73321f}
+#status{text-align:center;min-height:22px;margin-top:12px;font:bold 14px Arial,sans-serif}
+#confirmModal{display:none;position:fixed;inset:0;background:#2d1b14ad;z-index:30;align-items:center;justify-content:center;padding:16px}
+.modal-card{max-width:440px;width:100%;max-height:92vh;overflow:auto;background:#fffaf1;border-radius:20px;padding:22px;text-align:center;box-shadow:0 12px 40px #0004}
+.modal-card h3{color:var(--rust);margin:0 0 14px;font-size:23px}
+.leaf-preview{position:relative;width:190px;height:190px;margin:0 auto 12px}
+.leaf-preview img{width:100%;height:100%;object-fit:contain}
+.leaf-preview .preview-words{position:absolute;left:14%;right:14%;top:30%;max-height:45%;overflow:hidden;overflow-wrap:anywhere;text-align:center;color:#542b19;font:bold 17px/1.12 "Comic Neue","Comic Sans MS",cursive;text-shadow:0 1px 0 #fff8e9;background:#fff4d9dc;border:1px solid #fff9e8;border-radius:12px;padding:6px 4px}
+.modal-card label{display:block;text-align:left;font:bold 14px Arial,sans-serif;margin:12px 0 6px}
+.modal-card input{width:100%;padding:13px;border:2px solid #e6c8a5;border-radius:12px;font:17px Arial,sans-serif;outline:none}
+.modal-actions{display:flex;gap:10px;margin-top:14px}
+.modal-actions button{flex:1}
+.cancel-btn{background:#eee0d0;color:#65452f}
+.confirm-btn{background:#b84d2d;color:white}
+@media(max-width:650px){
+ .board{height:70vh;min-height:430px;width:calc(100% - 14px)}
+ .leaf{width:clamp(62px,16vw,88px);height:clamp(64px,16vw,90px)}
+ #student{margin:14px;padding:20px}
+ .qr-toggle{top:10px;right:10px;width:43px;height:43px}
+ .clear-toggle{top:10px;left:10px;width:43px;height:43px}
+ .qr-panel{top:62px;right:10px}
+}
+</style>
+</head>
+<body>
+<header id="mainHeader"><h1>What are you thankful for?</h1><div class="answer-pattern">I am thankful for my ________.</div></header>
+
+<main id="teacher">
+ <button class="clear-toggle" id="clearAllBtn" aria-label="Remove all responses" title="Remove all responses">🗑</button>
+ <button class="qr-toggle" id="qrToggle" aria-label="Show QR code" title="Show QR code">▦</button>
+ <div class="qr-panel" id="qrPanel">
+  <strong>SCAN TO SHARE</strong>
+  <div id="qrcode"></div>
+  <p>Scan with your iPad.</p>
+ </div>
+ <section class="board" id="board">
+  <img class="tree-image" src="https://i.postimg.cc/XqFPtxBQ/nc.png" alt="Bare Thanksgiving tree with branches">
+  <div id="leaves"></div>
+  <div aria-hidden="true" style="position:absolute;left:14px;top:10px;font-size:clamp(17px,2vw,25px);opacity:.72;pointer-events:none">🍂</div>
+  <div aria-hidden="true" style="position:absolute;right:14px;bottom:10px;font-size:clamp(17px,2vw,25px);opacity:.72;pointer-events:none">🍁</div>
+ </section>
+ <div class="counter">🍂 <span id="count">0</span> thankful leaves on our tree!</div>
+ <div id="connection">Connecting to the shared Thankful Tree…</div>
+</main>
+
+<section id="student">
+ <h2>What are you thankful for?</h2>
+ <label class="student-field-label" for="studentNameInput">Name</label>
+ <input class="student-name-input" id="studentNameInput" type="text" maxlength="40" placeholder="Type your name" autocomplete="name">
+ <label class="student-field-label" for="answer">Your answer</label>
+ <textarea id="answer" maxlength="300" placeholder="你最感謝的是什麼？"></textarea>
+ <button class="translate-btn" id="translateBtn">Translate 翻譯</button>
+ <button class="add-btn" id="addBtn">Add</button>
+ <div id="status" role="status"></div>
+</section>
+
+<div id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+ <div class="modal-card">
+  <h3 id="confirmTitle">Your Thankful Leaf 🍁</h3>
+  <div class="leaf-preview" id="leafPreview">
+   <img id="previewLeafImage" src="" alt="Your maple leaf">
+   <div class="preview-words" id="previewWords"></div>
+  </div>
+  <div class="modal-actions">
+   <button class="cancel-btn" id="cancelAdd">Close</button>
+  </div>
+ </div>
+</div>
+
+<script>
+// Supabase Project URL must be the base URL only. Do not add /rest/v1/.
+// Use the Supabase publishable key here, never a secret/service_role key.
+const SUPABASE_URL = "https://sinvbiadqmwlqvnheifh.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_f2uUvv7c9QlRJ1mOk1VF9g_t-0oxhH6";
+
+const TABLE = "thankful_responses";
+const TREE_LEAF_IMAGES = [
+ "https://i.postimg.cc/XqFPtxBy/l10.png",
+ "https://i.postimg.cc/4yt0jwH5/l2.png",
+ "https://i.postimg.cc/T1msBQ5J/l3.png",
+ "https://i.postimg.cc/yx9G2n3X/l4.png",
+ "https://i.postimg.cc/2yvtgTL4/l5.png",
+ "https://i.postimg.cc/VvMh240X/l6.png",
+ "https://i.postimg.cc/MHRLgtfV/l7.png",
+ "https://i.postimg.cc/C5D29JnD/l8.png",
+ "https://i.postimg.cc/d3dfgnZy/l9.png",
+ "https://i.postimg.cc/4yt0jwHP/leaf1.png"
+];
+const params = new URLSearchParams(location.search);
+const isStudent = params.get("mode") === "student";
+const teacher = document.getElementById("teacher");
+const student = document.getElementById("student");
+const connection = document.getElementById("connection");
+
+let client = null;
+let translatedText = "";
+let pendingOriginal = "";
+let pendingTranslation = "";
+let pendingLeafUrl = "";
+let allRows = [];
+
+if (isStudent) {
+ teacher.style.display = "none";
+ document.getElementById("mainHeader").style.display = "none";
+ student.style.display = "block";
+} else {
+ student.style.display = "none";
+ const studentUrl = location.origin + location.pathname + "?mode=student";
+ if (location.protocol !== "file:" && window.QRCode) {
+  new QRCode(document.getElementById("qrcode"), {
+   text: studentUrl, width: 128, height: 128,
+   colorDark: "#66391f", colorLight: "#ffffff",
+   correctLevel: QRCode.CorrectLevel.H
+  });
+ } else {
+  document.getElementById("qrcode").textContent = "Publish this page online to create the student QR code.";
+ }
+}
+
+document.getElementById("clearAllBtn").addEventListener("click", async () => {
+ if (!client) {
+  alert("The shared database is not connected.");
+  return;
+ }
+ const confirmed = window.confirm("Remove ALL thankful leaves from the tree? This cannot be undone.");
+ if (!confirmed) return;
+ const button = document.getElementById("clearAllBtn");
+ button.disabled = true;
+ try {
+  // id is the table's bigint primary key; this filter targets all existing rows.
+  const { error } = await client.from(TABLE).delete().gt("id", 0);
+  if (error) throw error;
+  allRows = [];
+  renderLeaves();
+  connection.textContent = "All thankful leaves have been cleared.";
+ } catch (error) {
+  console.error(error);
+  alert("Could not remove responses. Check the Supabase DELETE policy and try again.");
+ } finally {
+  button.disabled = false;
+ }
+});
+
+document.getElementById("qrToggle").addEventListener("click", () => {
+ const panel = document.getElementById("qrPanel");
+ panel.classList.toggle("open");
+ document.getElementById("qrToggle").setAttribute("aria-label",
+  panel.classList.contains("open") ? "Hide QR code" : "Show QR code");
+});
+
+function configured() {
+ return SUPABASE_URL.startsWith("https://") &&
+  !SUPABASE_URL.includes("YOUR_") &&
+  SUPABASE_ANON_KEY.length > 20 &&
+  !SUPABASE_ANON_KEY.includes("YOUR_");
+}
+if (configured() && window.supabase) {
+ client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+ if (!isStudent) startTeacherBoard();
+} else if (!isStudent) {
+ connection.textContent = "Setup needed: check your Supabase Project URL and publishable key.";
+}
+
+async function startTeacherBoard() {
+ // A fresh teacher-board visit starts a new activity: erase saved responses
+ // before listening for new student submissions. Student QR pages do not run this.
+ allRows = [];
+ renderLeaves();
+ connection.textContent = "Preparing a fresh Thankful Tree…";
+ try {
+  const { error } = await client.from(TABLE).delete().gt("id", 0);
+  if (error) throw error;
+  connection.textContent = "Previous responses cleared. Waiting for students…";
+ } catch (error) {
+  console.error("Could not clear previous responses:", error);
+  connection.textContent = "The board is blank, but old database responses could not be deleted. Check the Supabase DELETE policy.";
+ }
+ client.channel("thankful-tree-live")
+  .on("postgres_changes", {event:"INSERT", schema:"public", table:TABLE}, payload => {
+   const row = payload.new;
+   if (!allRows.some(x => x.id === row.id)) {
+    allRows.push(row);
+    renderLeaves();
+   }
+  })
+  .subscribe(status => {
+   if (status === "SUBSCRIBED") {
+    connection.textContent = "🟢 Live connection active — new responses will appear here";
+   } else if (status !== "CLOSED") {
+    connection.textContent = "Connecting to live updates…";
+   }
+  });
+}
+
+const positions = [
+ // Fill the tree's central canopy, following the branch crown.
+ // Keep leaves above the trunk and inside the outer branch tips.
+ [39,5],[52,7],[28,10],[65,11],[16,16],[82,16],
+ [46,17],[58,20],[33,23],[72,25],[11,29],[88,30],
+ [23,34],[39,33],[56,34],[76,37],[15,42],[31,44],
+ [48,43],[66,46],[84,47],[23,53],[39,54],[58,54],
+ [74,55],[34,61],[45,60],[57,62],[67,59],[81,53]
+];
+function renderLeaves() {
+ const wrap = document.getElementById("leaves");
+ wrap.replaceChildren();
+ allRows.forEach((row,index) => {
+  const pos = positions[index % positions.length];
+  const leaf = document.createElement("div");
+  leaf.className = "leaf";
+  leaf.style.left = pos[0] + "%";
+  leaf.style.top = pos[1] + "%";
+  leaf.style.setProperty("--tilt", (((index%5)-2)*6) + "deg");
+  const img = document.createElement("img");
+  img.src = row.leaf_url || TREE_LEAF_IMAGES[index % TREE_LEAF_IMAGES.length];
+  img.alt = "Thankful maple leaf";
+  const words = document.createElement("div");
+  words.className = "leaf-words";
+  words.textContent = row.translation || row.original || "";
+  const name = document.createElement("div");
+  name.className = "leaf-name";
+  name.textContent = row.student_name || "";
+  leaf.append(img,words,name);
+  leaf.title = "Click to read this response";
+  leaf.tabIndex = 0;
+  leaf.setAttribute("role","button");
+  leaf.setAttribute("aria-label","Thankful response by " + (row.student_name || "a student"));
+  leaf.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " ") { e.preventDefault(); showLeaf(row); } });
+  leaf.addEventListener("click", () => showLeaf(row));
+  wrap.appendChild(leaf);
+ });
+ document.getElementById("count").textContent = allRows.length;
+}
+function showLeaf(row) {
+ document.getElementById("previewLeafImage").src = TREE_LEAF_IMAGES[0];
+ document.getElementById("previewWords").textContent =
+  (row.translation || row.original || "") + (row.student_name ? "\n— " + row.student_name : "");
+ document.getElementById("confirmTitle").textContent = "🍁 " + (row.student_name || "Thankful Leaf");
+ document.getElementById("confirmModal").style.display = "flex";
+}
+function closeConfirm() {
+ document.getElementById("confirmModal").style.display = "none";
+}
+document.getElementById("cancelAdd").addEventListener("click",closeConfirm);
+document.getElementById("confirmModal").addEventListener("click",e=>{
+ if(e.target.id==="confirmModal") closeConfirm();
+});
+
+document.getElementById("translateBtn").addEventListener("click",translateAnswer);
+async function translateAnswer() {
+ const box = document.getElementById("answer");
+ const input = box.value.trim();
+ if (!input) {
+  document.getElementById("status").textContent = "Please type your answer first.";
+  return;
+ }
+ document.getElementById("status").textContent = "Translating…";
+ try {
+  const url = "https://api.mymemory.translated.net/get?q=" +
+   encodeURIComponent(input) + "&langpair=zh-TW|en";
+  const response = await fetch(url);
+  const result = await response.json();
+  if (result.responseStatus !== 200) throw new Error("Translation unavailable");
+  translatedText = result.responseData.translatedText;
+  box.value = translatedText;
+  document.getElementById("status").textContent = "";
+ } catch(err) {
+  translatedText = "";
+  document.getElementById("status").textContent = "Translation unavailable. Please try again.";
+ }
+}
+
+document.getElementById("addBtn").addEventListener("click",saveLeaf);
+async function saveLeaf() {
+ const name = document.getElementById("studentNameInput").value.trim();
+ const box = document.getElementById("answer");
+ const boxText = box.value.trim();
+ const status = document.getElementById("status");
+ const btn = document.getElementById("addBtn");
+ if (!name) {
+  status.textContent = "Please type your name.";
+  document.getElementById("studentNameInput").focus();
+  return;
+ }
+ if (!boxText) {
+  status.textContent = "Please type your answer first.";
+  box.focus();
+  return;
+ }
+ if (!client) {
+  status.textContent = "Connection problem. Please tell your teacher.";
+  return;
+ }
+ const original = boxText;
+ const translation = translatedText || boxText;
+ btn.disabled = true;
+ btn.textContent = "Adding…";
+ status.textContent = "Please wait…";
+ try {
+  const { error } = await client.from(TABLE).insert({
+   original,
+   translation,
+   student_name: name
+  });
+  if (error) throw error;
+  box.value = "";
+  document.getElementById("studentNameInput").value = "";
+  translatedText = "";
+  status.textContent = "Thank you! Your leaf has been added 🍁";
+ } catch (error) {
+  console.error("Could not save thankful leaf:", error);
+  status.textContent = "Could not add your leaf: " + (error?.message || "Unknown error") + ". Please tell your teacher.";
+ } finally {
+  btn.disabled = false;
+  btn.textContent = "Add";
+ }
+}
+
+</script>
+</body>
+</html>
